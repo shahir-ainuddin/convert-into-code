@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { reactive, watch } from 'vue'
 
 type TestFormState = {
   test_code: string;
@@ -10,6 +10,26 @@ const form = reactive<TestFormState>({
   test_code: '',
   test_name: ''
 })
+
+const props = withDefaults(
+  defineProps<{
+    modelValue?: Partial<TestFormState> | null
+    submitLabel?: string
+  }>(),
+  {
+    modelValue: null,
+    submitLabel: 'Save'
+  }
+)
+
+watch(
+  () => props.modelValue,
+  (value) => {
+    form.test_code = value?.test_code ?? ''
+    form.test_name = value?.test_name ?? ''
+  },
+  { immediate: true, deep: true }
+)
 
 const emit = defineEmits<{
   submit: [payload: TestFormState]
@@ -49,7 +69,7 @@ function onSubmit() {
         type="submit"
         class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
       >
-        Save
+        {{ props.submitLabel }}
       </button>
     </div>
   </form>

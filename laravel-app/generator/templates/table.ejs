@@ -1,9 +1,10 @@
 <script setup lang="ts">
 type <%= componentName %>Row = {
+  id: number
 <% fields.forEach(function(field, index) { %>  <%= field.name %>: <%= field.type === 'checkbox' ? 'boolean' : 'string' %><%= index < fields.length - 1 ? ';' : '' %>
 <% }) %>}
 
-withDefaults(
+const props = withDefaults(
   defineProps<{
     rows: <%= componentName %>Row[]
   }>(),
@@ -11,6 +12,10 @@ withDefaults(
     rows: () => []
   }
 )
+
+const emit = defineEmits<{
+  edit: [row: <%= componentName %>Row]
+}>()
 </script>
 
 <template>
@@ -21,17 +26,27 @@ withDefaults(
 <% fields.forEach(function(field) { %>          <th class="px-4 py-3 text-left font-semibold text-gray-700">
             <%= field.label %>
           </th>
-<% }) %>        </tr>
+<% }) %>          <th class="px-4 py-3 text-left font-semibold text-gray-700">Action</th>
+        </tr>
       </thead>
       <tbody class="divide-y divide-gray-100">
-        <tr v-for="(row, rowIndex) in rows" :key="rowIndex" class="hover:bg-gray-50">
+        <tr v-for="row in props.rows" :key="row.id" class="hover:bg-gray-50">
 <% fields.forEach(function(field) { %>          <td class="px-4 py-3 text-gray-700">
             <span v-if="typeof row.<%= field.name %> === 'boolean'">
               {{ row.<%= field.name %> ? 'Yes' : 'No' }}
             </span>
             <span v-else>{{ row.<%= field.name %> }}</span>
           </td>
-<% }) %>        </tr>
+<% }) %>          <td class="px-4 py-3 text-gray-700">
+            <button
+              type="button"
+              class="rounded-md border border-slate-300 px-3 py-1 text-xs font-medium hover:bg-slate-100"
+              @click="emit('edit', row)"
+            >
+              Edit
+            </button>
+          </td>
+        </tr>
       </tbody>
     </table>
   </div>

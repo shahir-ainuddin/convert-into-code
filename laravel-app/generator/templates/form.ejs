@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive } from 'vue'
+import { reactive, watch } from 'vue'
 
 type <%= componentName %>FormState = {
 <% fields.forEach(function(field, index) { %>  <%= field.name %>: <%= field.type === 'checkbox' ? 'boolean' : 'string' %><%= index < fields.length - 1 ? ';' : '' %>
@@ -8,6 +8,25 @@ type <%= componentName %>FormState = {
 const form = reactive<<%= componentName %>FormState>({
 <% fields.forEach(function(field, index) { %>  <%= field.name %>: <%- field.type === 'checkbox' ? 'false' : "''" %><%= index < fields.length - 1 ? ',' : '' %>
 <% }) %>})
+
+const props = withDefaults(
+  defineProps<{
+    modelValue?: Partial<<%= componentName %>FormState> | null
+    submitLabel?: string
+  }>(),
+  {
+    modelValue: null,
+    submitLabel: 'Save'
+  }
+)
+
+watch(
+  () => props.modelValue,
+  (value) => {
+<% fields.forEach(function(field) { %>    form.<%= field.name %> = value?.<%= field.name %> ?? <%- field.type === 'checkbox' ? 'false' : "''" %>
+<% }) %>  },
+  { immediate: true, deep: true }
+)
 
 const emit = defineEmits<{
   submit: [payload: <%= componentName %>FormState]
@@ -42,7 +61,7 @@ function onSubmit() {
         type="submit"
         class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
       >
-        Save
+        {{ props.submitLabel }}
       </button>
     </div>
   </form>

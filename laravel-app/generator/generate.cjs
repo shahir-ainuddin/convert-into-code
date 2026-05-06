@@ -222,6 +222,8 @@ import ${name}Form from '../../components/generated/${name}Form.vue'
 import ${name}Table from '../../components/generated/${name}Table.vue'
 
 const rows = ref<any[]>([])
+const editingId = ref<number | null>(null)
+const formModel = ref<Record<string, unknown> | null>(null)
 const errorMessage = ref('')
 const isSaving = ref(false)
 
@@ -242,8 +244,12 @@ async function onSubmit(payload: Record<string, unknown>) {
   errorMessage.value = ''
   const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? ''
   try {
-    const response = await fetch('/generated-api/${tableName}', {
-      method: 'POST',
+    const isEditing = editingId.value !== null
+    const targetUrl = isEditing
+      ? \`/generated-api/${tableName}/\${editingId.value}\`
+      : '/generated-api/${tableName}'
+    const response = await fetch(targetUrl, {
+      method: isEditing ? 'PUT' : 'POST',
       credentials: 'same-origin',
       headers: {
         'Content-Type': 'application/json',
@@ -258,12 +264,19 @@ async function onSubmit(payload: Record<string, unknown>) {
       return
     }
 
+    editingId.value = null
+    formModel.value = null
     await loadRows()
   } catch (error) {
     errorMessage.value = 'Save failed due to network/server error.'
   } finally {
     isSaving.value = false
   }
+}
+
+function onEdit(row: Record<string, unknown>) {
+  editingId.value = Number(row.id)
+  formModel.value = { ...row }
 }
 
 onMounted(loadRows)
@@ -273,14 +286,14 @@ onMounted(loadRows)
   <main class="space-y-6">
     <section>
       <h2 class="mb-3 text-xl font-semibold text-slate-800">${name} Form</h2>
-      <${name}Form @submit="onSubmit" />
+      <${name}Form :model-value="formModel" :submit-label="editingId ? 'Update' : 'Save'" @submit="onSubmit" />
       <p v-if="isSaving" class="mt-2 text-sm text-slate-600">Saving...</p>
       <p v-if="errorMessage" class="mt-2 text-sm text-red-600">{{ errorMessage }}</p>
     </section>
 
     <section>
       <h2 class="mb-3 text-xl font-semibold text-slate-800">${name} Table</h2>
-      <${name}Table :rows="rows" />
+      <${name}Table :rows="rows" @edit="onEdit" />
     </section>
   </main>
 </template>
@@ -338,10 +351,12 @@ use Illuminate\\Support\\Facades\\DB;
 
 class ${controllerName} extends Controller
 {
+    private const TABLE = '${tableName}';
+
     public function index(): JsonResponse
     {
         return response()->json(
-            DB::table('${tableName}')
+            DB::table(self::TABLE)
                 ->orderByDesc('id')
                 ->get()
         );
@@ -353,12 +368,27 @@ class ${controllerName} extends Controller
 ${validationRules}
         ]);
 
-        $id = DB::table('${tableName}')->insertGetId(array_merge($data, [
+        $id = DB::table(self::TABLE)->insertGetId(array_merge($data, [
             'created_at' => now(),
             'updated_at' => now(),
         ]));
 
         return response()->json(['id' => $id], 201);
+    }
+
+    public function update(Request $request, int $id): JsonResponse
+    {
+        $data = $request->validate([
+${validationRules}
+        ]);
+
+        DB::table(self::TABLE)
+            ->where('id', $id)
+            ->update(array_merge($data, [
+                'updated_at' => now(),
+            ]));
+
+        return response()->json(['id' => $id]);
     }
 }
 `
@@ -374,7 +404,7 @@ function syncGeneratedBackendRoutes() {
       if (!fs.existsSync(controllerPath)) return null
       const tableName = getTableName(name)
       const controllerFqn = `\\App\\Http\\Controllers\\Generated\\${name}Controller::class`
-      return `Route::get('/generated-api/${tableName}', [${controllerFqn}, 'index']);\nRoute::post('/generated-api/${tableName}', [${controllerFqn}, 'store']);`
+      return `Route::get('/generated-api/${tableName}', [${controllerFqn}, 'index']);\nRoute::post('/generated-api/${tableName}', [${controllerFqn}, 'store']);\nRoute::put('/generated-api/${tableName}/{id}', [${controllerFqn}, 'update']);`
     })
     .filter(Boolean)
     .join('\n')
