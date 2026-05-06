@@ -8,10 +8,18 @@ type <%= componentName %>FormState = {
 const form = reactive<<%= componentName %>FormState>({
 <% fields.forEach(function(field, index) { %>  <%= field.name %>: <%- field.type === 'checkbox' ? 'false' : "''" %><%= index < fields.length - 1 ? ',' : '' %>
 <% }) %>})
+
+const emit = defineEmits<{
+  submit: [payload: <%= componentName %>FormState]
+}>()
+
+function onSubmit() {
+  emit('submit', { ...form })
+}
 </script>
 
 <template>
-  <form class="space-y-4 rounded-md border border-gray-200 bg-white p-4">
+  <form class="space-y-4 rounded-md border border-gray-200 bg-white p-4" @submit.prevent="onSubmit">
 <% fields.forEach(function(field) { %>    <div class="flex items-center gap-3">
       <label for="<%= field.name %>" class="text-sm font-medium text-gray-700 min-w-32">
         <%= field.label %>
@@ -29,5 +37,13 @@ const form = reactive<<%= componentName %>FormState>({
         class="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
       />
 <% } %>    </div>
-<% }) %>  </form>
+<% }) %>    <div>
+      <button
+        type="submit"
+        class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+      >
+        Save
+      </button>
+    </div>
+  </form>
 </template>

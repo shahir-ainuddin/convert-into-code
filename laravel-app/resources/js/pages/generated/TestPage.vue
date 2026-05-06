@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import PageForm from '../../components/generated/PageForm.vue'
-import PageTable from '../../components/generated/PageTable.vue'
+import TestForm from '../../components/generated/TestForm.vue'
+import TestTable from '../../components/generated/TestTable.vue'
 
 const rows = ref<any[]>([])
 const errorMessage = ref('')
 const isSaving = ref(false)
 
 async function loadRows() {
-  const response = await fetch('/generated-api/pages', {
+  const response = await fetch('/generated-api/tests', {
     credentials: 'same-origin'
   })
   if (!response.ok) {
@@ -24,7 +24,7 @@ async function onSubmit(payload: Record<string, unknown>) {
   errorMessage.value = ''
   const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? ''
   try {
-    const response = await fetch('/generated-api/pages', {
+    const response = await fetch('/generated-api/tests', {
       method: 'POST',
       credentials: 'same-origin',
       headers: {
@@ -54,15 +54,15 @@ onMounted(loadRows)
 <template>
   <main class="space-y-6">
     <section>
-      <h2 class="mb-3 text-xl font-semibold text-slate-800">Page Form</h2>
-      <PageForm @submit="onSubmit" />
+      <h2 class="mb-3 text-xl font-semibold text-slate-800">Test Form</h2>
+      <TestForm @submit="onSubmit" />
       <p v-if="isSaving" class="mt-2 text-sm text-slate-600">Saving...</p>
       <p v-if="errorMessage" class="mt-2 text-sm text-red-600">{{ errorMessage }}</p>
     </section>
 
     <section>
-      <h2 class="mb-3 text-xl font-semibold text-slate-800">Page Table</h2>
-      <PageTable :rows="rows" />
+      <h2 class="mb-3 text-xl font-semibold text-slate-800">Test Table</h2>
+      <TestTable :rows="rows" />
     </section>
   </main>
 </template>

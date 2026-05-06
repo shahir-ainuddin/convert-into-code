@@ -1,7 +1,7 @@
 {
-  "name": "Page",
+  "name": "Test",
   "fields": [
-    { "name": "page_code", "label": "Page Code", "type": "text" },
-    { "name": "page_name", "label": "Page Name", "type": "text" }
+    { "name": "test_code", "label": "Test Code", "type": "text" },
+    { "name": "test_name", "label": "Test Name", "type": "text" }
   ]
 }
