@@ -5,6 +5,7 @@ const ejs = require('ejs')
 const generatorDir = __dirname
 const templatesDir = path.join(generatorDir, 'templates')
 const specPath = path.join(generatorDir, 'spec.json')
+const specCsvPath = path.join(generatorDir, 'spec.csv')
 const outputDir = path.join(generatorDir, '..', 'resources', 'js', 'components', 'generated')
 const pagesDir = path.join(generatorDir, '..', 'resources', 'js', 'pages', 'generated')
 const routerDir = path.join(generatorDir, '..', 'resources', 'js', 'router')
@@ -19,6 +20,87 @@ const moduleManagerControllerPath = path.join(controllersDir, 'ModuleManagerCont
 function readJson(filePath) {
   const content = fs.readFileSync(filePath, 'utf-8')
   return JSON.parse(content)
+}
+
+function parseCsvLine(line) {
+  const result = []
+  let current = ''
+  let inQuotes = false
+
+  for (let i = 0; i < line.length; i += 1) {
+    const char = line[i]
+    const next = line[i + 1]
+
+    if (char === '"' && inQuotes && next === '"') {
+      current += '"'
+      i += 1
+      continue
+    }
+
+    if (char === '"') {
+      inQuotes = !inQuotes
+      continue
+    }
+
+    if (char === ',' && !inQuotes) {
+      result.push(current.trim())
+      current = ''
+      continue
+    }
+
+    current += char
+  }
+
+  result.push(current.trim())
+  return result
+}
+
+function readSpecFromCsv(filePath) {
+  const content = fs.readFileSync(filePath, 'utf-8')
+  const lines = content
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0)
+
+  if (lines.length < 3) {
+    throw new Error('CSV spec must include module name row and field rows')
+  }
+
+  const topRow = parseCsvLine(lines[0])
+  if (topRow[0]?.toLowerCase() !== 'name' || !topRow[1]) {
+    throw new Error('CSV row 1 must be: name,<ModuleName>')
+  }
+
+  const headerIndex = lines.findIndex((line) => {
+    const row = parseCsvLine(line).map((cell) => cell.toLowerCase())
+    return row[0] === 'name' && row[1] === 'label' && row[2] === 'type'
+  })
+
+  if (headerIndex === -1) {
+    throw new Error('CSV must include field header row: name,label,type')
+  }
+
+  const fields = lines
+    .slice(headerIndex + 1)
+    .map((line) => parseCsvLine(line))
+    .filter((row) => row[0] && row[1] && row[2])
+    .map((row) => ({
+      name: row[0],
+      label: row[1],
+      type: row[2].toLowerCase(),
+    }))
+
+  return {
+    name: topRow[1],
+    fields,
+  }
+}
+
+function readSpec() {
+  if (fs.existsSync(specCsvPath)) {
+    return readSpecFromCsv(specCsvPath)
+  }
+  return readJson(specPath)
 }
 
 function ensureDir(dirPath) {
@@ -612,7 +694,7 @@ function syncGeneratedBackendRoutes() {
 }
 
 function generate() {
-  const spec = readJson(specPath)
+  const spec = readSpec()
   validateSpec(spec)
   ensureDir(outputDir)
 

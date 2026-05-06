@@ -1,13 +1,13 @@
 <script setup lang="ts">
-type ImageRow = {
+type TestRow = {
   id: number
-  image_code: string;
-  image_name: string
+  test_code: string;
+  test_name: string
 }
 
 const props = withDefaults(
   defineProps<{
-    rows: ImageRow[]
+    rows: TestRow[]
   }>(),
   {
     rows: () => []
@@ -15,7 +15,7 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  edit: [row: ImageRow]
+  edit: [row: TestRow]
 }>()
 </script>
 
@@ -25,10 +25,10 @@ const emit = defineEmits<{
       <thead class="bg-gray-50">
         <tr>
           <th class="px-4 py-3 text-left font-semibold text-gray-700">
-            Image Code
+            Test Code
           </th>
           <th class="px-4 py-3 text-left font-semibold text-gray-700">
-            Image Name
+            Test Name
           </th>
           <th class="px-4 py-3 text-left font-semibold text-gray-700">Action</th>
         </tr>
@@ -36,16 +36,16 @@ const emit = defineEmits<{
       <tbody class="divide-y divide-gray-100">
         <tr v-for="row in props.rows" :key="row.id" class="hover:bg-gray-50">
           <td class="px-4 py-3 text-gray-700">
-            <span v-if="typeof row.image_code === 'boolean'">
-              {{ row.image_code ? 'Yes' : 'No' }}
+            <span v-if="typeof row.test_code === 'boolean'">
+              {{ row.test_code ? 'Yes' : 'No' }}
             </span>
-            <span v-else>{{ row.image_code }}</span>
+            <span v-else>{{ row.test_code }}</span>
           </td>
           <td class="px-4 py-3 text-gray-700">
-            <span v-if="typeof row.image_name === 'boolean'">
-              {{ row.image_name ? 'Yes' : 'No' }}
+            <span v-if="typeof row.test_name === 'boolean'">
+              {{ row.test_name ? 'Yes' : 'No' }}
             </span>
-            <span v-else>{{ row.image_name }}</span>
+            <span v-else>{{ row.test_name }}</span>
           </td>
           <td class="px-4 py-3 text-gray-700">
             <button

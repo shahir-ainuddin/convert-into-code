@@ -10,5 +10,10 @@ export const generatedRoutes: RouteRecordRaw[] = [
     name: 'Image',
     path: '/image',
     component: () => import('../pages/generated/ImagePage.vue')
+  },
+  {
+    name: 'Test',
+    path: '/test',
+    component: () => import('../pages/generated/TestPage.vue')
   }
 ]

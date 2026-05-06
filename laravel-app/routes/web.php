@@ -10,6 +10,9 @@ Route::put('/generated-api/files/{id}', [\App\Http\Controllers\Generated\FileCon
 Route::get('/generated-api/images', [\App\Http\Controllers\Generated\ImageController::class, 'index']);
 Route::post('/generated-api/images', [\App\Http\Controllers\Generated\ImageController::class, 'store']);
 Route::put('/generated-api/images/{id}', [\App\Http\Controllers\Generated\ImageController::class, 'update']);
+Route::get('/generated-api/tests', [\App\Http\Controllers\Generated\TestController::class, 'index']);
+Route::post('/generated-api/tests', [\App\Http\Controllers\Generated\TestController::class, 'store']);
+Route::put('/generated-api/tests/{id}', [\App\Http\Controllers\Generated\TestController::class, 'update']);
 // <generated-api-routes:end>
 
 Route::get('/{any?}', function () {

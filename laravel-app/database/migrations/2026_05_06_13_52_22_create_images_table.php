@@ -12,8 +12,6 @@ return new class extends Migration
             $table->id();
             $table->string('image_code')->nullable();
             $table->string('image_name')->nullable();
-            $table->boolean('is_active')->default(false);
-            $table->boolean('is_visible')->default(false);
             $table->timestamps();
         });
     }
