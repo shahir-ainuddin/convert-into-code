@@ -3,7 +3,7 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "generate": "node generator/generate.cjs",
+        "generate": "node generator/generate.cjs && php artisan migrate",
         "build": "vite build",
         "dev": "vite",
         "type-check": "vue-tsc --noEmit -p tsconfig.json"

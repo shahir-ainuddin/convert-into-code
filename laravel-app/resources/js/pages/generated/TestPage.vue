@@ -8,6 +8,7 @@ const editingId = ref<number | null>(null)
 const formModel = ref<Record<string, unknown> | null>(null)
 const errorMessage = ref('')
 const isSaving = ref(false)
+const isDeletingModule = ref(false)
 
 async function loadRows() {
   const response = await fetch('/generated-api/tests', {
@@ -61,6 +62,37 @@ function onEdit(row: Record<string, unknown>) {
   formModel.value = { ...row }
 }
 
+async function onDeleteModule() {
+  const confirmed = window.confirm('Delete this module completely? This removes UI files, controller, routes, migration file and table.')
+  if (!confirmed) return
+
+  isDeletingModule.value = true
+  errorMessage.value = ''
+  const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? ''
+
+  try {
+    const response = await fetch('/generated-api/modules/Test', {
+      method: 'DELETE',
+      credentials: 'same-origin',
+      headers: {
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': token
+      }
+    })
+
+    if (!response.ok) {
+      errorMessage.value = 'Module delete failed.'
+      return
+    }
+
+    window.location.assign('/?_refresh=' + Date.now())
+  } catch (error) {
+    errorMessage.value = 'Module delete failed due to network/server error.'
+  } finally {
+    isDeletingModule.value = false
+  }
+}
+
 onMounted(loadRows)
 </script>
 
@@ -70,6 +102,14 @@ onMounted(loadRows)
       <h2 class="mb-3 text-xl font-semibold text-slate-800">Test Form</h2>
       <TestForm :model-value="formModel" :submit-label="editingId ? 'Update' : 'Save'" @submit="onSubmit" />
       <p v-if="isSaving" class="mt-2 text-sm text-slate-600">Saving...</p>
+      <button
+        type="button"
+        class="mt-2 rounded-md border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
+        :disabled="isDeletingModule"
+        @click="onDeleteModule"
+      >
+        {{ isDeletingModule ? 'Deleting Module...' : 'Delete Module' }}
+      </button>
       <p v-if="errorMessage" class="mt-2 text-sm text-red-600">{{ errorMessage }}</p>
     </section>
 

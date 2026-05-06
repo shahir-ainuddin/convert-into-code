@@ -14,6 +14,7 @@ const migrationsDir = path.join(generatorDir, '..', 'database', 'migrations')
 const seedersDir = path.join(generatorDir, '..', 'database', 'seeders')
 const databaseSeederPath = path.join(seedersDir, 'DatabaseSeeder.php')
 const controllersDir = path.join(generatorDir, '..', 'app', 'Http', 'Controllers', 'Generated')
+const moduleManagerControllerPath = path.join(controllersDir, 'ModuleManagerController.php')
 
 function readJson(filePath) {
   const content = fs.readFileSync(filePath, 'utf-8')
@@ -216,6 +217,7 @@ function updateDatabaseSeeder(spec) {
 
 function generatePageFile(name) {
   const tableName = getTableName(name)
+  const routePath = toRoutePath(name)
   const content = `<script setup lang="ts">
 import { onMounted, ref } from 'vue'
 import ${name}Form from '../../components/generated/${name}Form.vue'
@@ -226,6 +228,7 @@ const editingId = ref<number | null>(null)
 const formModel = ref<Record<string, unknown> | null>(null)
 const errorMessage = ref('')
 const isSaving = ref(false)
+const isDeletingModule = ref(false)
 
 async function loadRows() {
   const response = await fetch('/generated-api/${tableName}', {
@@ -279,6 +282,37 @@ function onEdit(row: Record<string, unknown>) {
   formModel.value = { ...row }
 }
 
+async function onDeleteModule() {
+  const confirmed = window.confirm('Delete this module completely? This removes UI files, controller, routes, migration file and table.')
+  if (!confirmed) return
+
+  isDeletingModule.value = true
+  errorMessage.value = ''
+  const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? ''
+
+  try {
+    const response = await fetch('/generated-api/modules/${name}', {
+      method: 'DELETE',
+      credentials: 'same-origin',
+      headers: {
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': token
+      }
+    })
+
+    if (!response.ok) {
+      errorMessage.value = 'Module delete failed.'
+      return
+    }
+
+    window.location.assign('/?_refresh=' + Date.now())
+  } catch (error) {
+    errorMessage.value = 'Module delete failed due to network/server error.'
+  } finally {
+    isDeletingModule.value = false
+  }
+}
+
 onMounted(loadRows)
 </script>
 
@@ -288,6 +322,14 @@ onMounted(loadRows)
       <h2 class="mb-3 text-xl font-semibold text-slate-800">${name} Form</h2>
       <${name}Form :model-value="formModel" :submit-label="editingId ? 'Update' : 'Save'" @submit="onSubmit" />
       <p v-if="isSaving" class="mt-2 text-sm text-slate-600">Saving...</p>
+      <button
+        type="button"
+        class="mt-2 rounded-md border border-red-300 bg-red-50 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-100"
+        :disabled="isDeletingModule"
+        @click="onDeleteModule"
+      >
+        {{ isDeletingModule ? 'Deleting Module...' : 'Delete Module' }}
+      </button>
       <p v-if="errorMessage" class="mt-2 text-sm text-red-600">{{ errorMessage }}</p>
     </section>
 
@@ -395,10 +437,150 @@ ${validationRules}
   writeFile(path.join(controllersDir, `${controllerName}.php`), content)
 }
 
+function generateModuleManagerControllerFile() {
+  ensureDir(controllersDir)
+  const content = `<?php
+
+namespace App\\Http\\Controllers\\Generated;
+
+use App\\Http\\Controllers\\Controller;
+use Illuminate\\Http\\JsonResponse;
+use Illuminate\\Support\\Facades\\File;
+use Illuminate\\Support\\Facades\\Schema;
+use Illuminate\\Support\\Str;
+
+class ModuleManagerController extends Controller
+{
+    public function destroy(string $name): JsonResponse
+    {
+        if (!preg_match('/^[A-Z][A-Za-z0-9]*$/', $name)) {
+            return response()->json(['message' => 'Invalid module name'], 422);
+        }
+
+        $table = Str::of($name)->snake()->plural()->toString();
+
+        Schema::dropIfExists($table);
+
+        $paths = [
+            resource_path("js/components/generated/{$name}Form.vue"),
+            resource_path("js/components/generated/{$name}Table.vue"),
+            resource_path("js/pages/generated/{$name}Page.vue"),
+            app_path("Http/Controllers/Generated/{$name}Controller.php"),
+            database_path("seeders/{$name}Seeder.php"),
+        ];
+
+        foreach ($paths as $path) {
+            if (File::exists($path)) {
+                File::delete($path);
+            }
+        }
+
+        foreach (glob(database_path("migrations/*_create_{$table}_table.php")) as $migrationFile) {
+            if ($migrationFile && File::exists($migrationFile)) {
+                File::delete($migrationFile);
+            }
+        }
+
+        $databaseSeederPath = database_path('seeders/DatabaseSeeder.php');
+        if (File::exists($databaseSeederPath)) {
+            $seederClass = "{$name}Seeder";
+            $seederContent = File::get($databaseSeederPath);
+            $seederContent = str_replace("use Database\\\\Seeders\\\\{$seederClass};\\n", '', $seederContent);
+            $seederContent = str_replace('        $this->call(' . $seederClass . '::class);' . "\\n", '', $seederContent);
+            File::put($databaseSeederPath, $seederContent);
+        }
+
+        $this->syncGeneratedRoutesAndPages();
+        $this->syncWebGeneratedApiRoutes();
+
+        return response()->json(['message' => "Module {$name} deleted"]);
+    }
+
+    private function syncGeneratedRoutesAndPages(): void
+    {
+        $componentDir = resource_path('js/components/generated');
+        $names = [];
+
+        if (File::isDirectory($componentDir)) {
+            foreach (File::files($componentDir) as $file) {
+                $filename = $file->getFilename();
+                if (!str_ends_with($filename, 'Form.vue')) {
+                    continue;
+                }
+
+                $name = str_replace('Form.vue', '', $filename);
+                if (File::exists("{$componentDir}/{$name}Table.vue")) {
+                    $names[] = $name;
+                }
+            }
+        }
+
+        sort($names);
+
+        $routeItems = array_map(function (string $name): string {
+            $path = Str::of($name)->snake()->replace('_', '-')->toString();
+            return "  {\\n    name: '{$name}',\\n    path: '/{$path}',\\n    component: () => import('../pages/generated/{$name}Page.vue')\\n  }";
+        }, $names);
+
+        $routesContent = "import type { RouteRecordRaw } from 'vue-router'\\n\\nexport const generatedRoutes: RouteRecordRaw[] = [\\n" . implode(",\\n", $routeItems) . "\\n]\\n";
+        File::put(resource_path('js/router/generated-routes.ts'), $routesContent);
+    }
+
+    private function syncWebGeneratedApiRoutes(): void
+    {
+        $webRoutesPath = base_path('routes/web.php');
+        if (!File::exists($webRoutesPath)) {
+            return;
+        }
+
+        $controllerDir = app_path('Http/Controllers/Generated');
+        $routes = [
+            "Route::delete('/generated-api/modules/{name}', [\\App\\Http\\Controllers\\Generated\\ModuleManagerController::class, 'destroy']);",
+        ];
+
+        if (File::isDirectory($controllerDir)) {
+            foreach (File::files($controllerDir) as $file) {
+                $filename = $file->getFilename();
+                if ($filename === 'ModuleManagerController.php' || !str_ends_with($filename, 'Controller.php')) {
+                    continue;
+                }
+
+                $name = str_replace('Controller.php', '', $filename);
+                $table = Str::of($name)->snake()->plural()->toString();
+                $controllerFqn = "\\\\App\\\\Http\\\\Controllers\\\\Generated\\\\{$name}Controller::class";
+                $routes[] = "Route::get('/generated-api/{$table}', [{$controllerFqn}, 'index']);";
+                $routes[] = "Route::post('/generated-api/{$table}', [{$controllerFqn}, 'store']);";
+                $routes[] = "Route::put('/generated-api/{$table}/{id}', [{$controllerFqn}, 'update']);";
+            }
+        }
+
+        $startMarker = '// <generated-api-routes:start>';
+        $endMarker = '// <generated-api-routes:end>';
+        $replacement = $startMarker . "\\n" . implode("\\n", $routes) . "\\n" . $endMarker;
+
+        $content = File::get($webRoutesPath);
+        $startPos = strpos($content, $startMarker);
+        $endPos = strpos($content, $endMarker);
+
+        if ($startPos !== false && $endPos !== false && $endPos > $startPos) {
+            $before = substr($content, 0, $startPos);
+            $after = substr($content, $endPos + strlen($endMarker));
+            $content = $before . $replacement . $after;
+        } else {
+            $content = str_replace("use Illuminate\\\\Support\\\\Facades\\\\Route;\\n", "use Illuminate\\\\Support\\\\Facades\\\\Route;\\n\\n{$replacement}\\n", $content);
+        }
+
+        File::put($webRoutesPath, $content);
+    }
+}
+`
+  writeFile(moduleManagerControllerPath, content)
+}
 function syncGeneratedBackendRoutes() {
   if (!fs.existsSync(webRoutesPath)) return
   const names = getGeneratedNames()
-  const routesBlock = names
+  const moduleDeleteRoute = "Route::delete('/generated-api/modules/{name}', [\\App\\Http\\Controllers\\Generated\\ModuleManagerController::class, 'destroy']);"
+  const moduleRoutes = names
     .map((name) => {
       const controllerPath = path.join(controllersDir, `${name}Controller.php`)
       if (!fs.existsSync(controllerPath)) return null
@@ -408,6 +590,7 @@ function syncGeneratedBackendRoutes() {
     })
     .filter(Boolean)
     .join('\n')
+  const routesBlock = moduleRoutes ? `${moduleDeleteRoute}\n${moduleRoutes}` : moduleDeleteRoute
 
   const startMarker = '// <generated-api-routes:start>'
   const endMarker = '// <generated-api-routes:end>'
@@ -439,6 +622,7 @@ function generate() {
   generateMigrationFile(spec)
   generateSeederFile(spec)
   generateControllerFile(spec)
+  generateModuleManagerControllerFile()
   updateDatabaseSeeder(spec)
   syncGeneratedPagesAndRoutes()
   syncGeneratedBackendRoutes()
