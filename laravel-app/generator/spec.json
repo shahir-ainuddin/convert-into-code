@@ -1,12 +1,7 @@
 {
-  "name": "Screen",
+  "name": "Page",
   "fields": [
-    { "name": "screen_code", "label": "Screen Code", "type": "text" },
-    { "name": "screen_name", "label": "Screen Name", "type": "text" },
-    { "name": "module_name", "label": "Module Name", "type": "text" },
-    { "name": "route_path", "label": "Route Path", "type": "text" },
-    { "name": "sort_order", "label": "Sort Order", "type": "text" },
-    { "name": "is_active", "label": "Is Active", "type": "checkbox" },
-    { "name": "is_visible", "label": "Is Visible", "type": "checkbox" }
+    { "name": "page_code", "label": "Page Code", "type": "text" },
+    { "name": "page_name", "label": "Page Name", "type": "text" }
   ]
 }
