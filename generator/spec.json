@@ -1,0 +1,7 @@
+{
+  "name": "Page",
+  "fields": [
+    { "name": "page_code", "label": "Page Code", "type": "text" },
+    { "name": "page_name", "label": "Page Name", "type": "text" }
+  ]
+}

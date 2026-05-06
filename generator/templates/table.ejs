@@ -1,0 +1,38 @@
+<script setup lang="ts">
+type <%= componentName %>Row = {
+<% fields.forEach(function(field, index) { %>  <%= field.name %>: <%= field.type === 'checkbox' ? 'boolean' : 'string' %><%= index < fields.length - 1 ? ';' : '' %>
+<% }) %>}
+
+withDefaults(
+  defineProps<{
+    rows: <%= componentName %>Row[]
+  }>(),
+  {
+    rows: () => []
+  }
+)
+</script>
+
+<template>
+  <div class="overflow-x-auto rounded-md border border-gray-200 bg-white">
+    <table class="min-w-full divide-y divide-gray-200 text-sm">
+      <thead class="bg-gray-50">
+        <tr>
+<% fields.forEach(function(field) { %>          <th class="px-4 py-3 text-left font-semibold text-gray-700">
+            <%= field.label %>
+          </th>
+<% }) %>        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <tr v-for="(row, rowIndex) in rows" :key="rowIndex" class="hover:bg-gray-50">
+<% fields.forEach(function(field) { %>          <td class="px-4 py-3 text-gray-700">
+            <span v-if="typeof row.<%= field.name %> === 'boolean'">
+              {{ row.<%= field.name %> ? 'Yes' : 'No' }}
+            </span>
+            <span v-else>{{ row.<%= field.name %> }}</span>
+          </td>
+<% }) %>        </tr>
+      </tbody>
+    </table>
+  </div>
+</template>
