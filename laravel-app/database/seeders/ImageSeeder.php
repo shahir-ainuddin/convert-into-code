@@ -6,15 +6,17 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class TestSeeder extends Seeder
+class ImageSeeder extends Seeder
 {
     use WithoutModelEvents;
 
     public function run(): void
     {
-        DB::table('tests')->insert([
-                'test_code' => 'Sample Test Code',
-                'test_name' => 'Sample Test Name',
+        DB::table('images')->insert([
+                'image_code' => 'Sample Image Code',
+                'image_name' => 'Sample Image Name',
+                'is_active' => false,
+                'is_visible' => false,
             'created_at' => now(),
             'updated_at' => now(),
         ]);

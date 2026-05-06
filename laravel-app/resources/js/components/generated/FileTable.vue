@@ -1,13 +1,15 @@
 <script setup lang="ts">
-type TestRow = {
+type FileRow = {
   id: number
-  test_code: string;
-  test_name: string
+  file_code: string;
+  file_name: string;
+  is_active: boolean;
+  is_visible: boolean
 }
 
 const props = withDefaults(
   defineProps<{
-    rows: TestRow[]
+    rows: FileRow[]
   }>(),
   {
     rows: () => []
@@ -15,7 +17,7 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  edit: [row: TestRow]
+  edit: [row: FileRow]
 }>()
 </script>
 
@@ -25,10 +27,16 @@ const emit = defineEmits<{
       <thead class="bg-gray-50">
         <tr>
           <th class="px-4 py-3 text-left font-semibold text-gray-700">
-            Test Code
+            File Code
           </th>
           <th class="px-4 py-3 text-left font-semibold text-gray-700">
-            Test Name
+            File Name
+          </th>
+          <th class="px-4 py-3 text-left font-semibold text-gray-700">
+            Is Active
+          </th>
+          <th class="px-4 py-3 text-left font-semibold text-gray-700">
+            Is Visible
           </th>
           <th class="px-4 py-3 text-left font-semibold text-gray-700">Action</th>
         </tr>
@@ -36,16 +44,28 @@ const emit = defineEmits<{
       <tbody class="divide-y divide-gray-100">
         <tr v-for="row in props.rows" :key="row.id" class="hover:bg-gray-50">
           <td class="px-4 py-3 text-gray-700">
-            <span v-if="typeof row.test_code === 'boolean'">
-              {{ row.test_code ? 'Yes' : 'No' }}
+            <span v-if="typeof row.file_code === 'boolean'">
+              {{ row.file_code ? 'Yes' : 'No' }}
             </span>
-            <span v-else>{{ row.test_code }}</span>
+            <span v-else>{{ row.file_code }}</span>
           </td>
           <td class="px-4 py-3 text-gray-700">
-            <span v-if="typeof row.test_name === 'boolean'">
-              {{ row.test_name ? 'Yes' : 'No' }}
+            <span v-if="typeof row.file_name === 'boolean'">
+              {{ row.file_name ? 'Yes' : 'No' }}
             </span>
-            <span v-else>{{ row.test_name }}</span>
+            <span v-else>{{ row.file_name }}</span>
+          </td>
+          <td class="px-4 py-3 text-gray-700">
+            <span v-if="typeof row.is_active === 'boolean'">
+              {{ row.is_active ? 'Yes' : 'No' }}
+            </span>
+            <span v-else>{{ row.is_active }}</span>
+          </td>
+          <td class="px-4 py-3 text-gray-700">
+            <span v-if="typeof row.is_visible === 'boolean'">
+              {{ row.is_visible ? 'Yes' : 'No' }}
+            </span>
+            <span v-else>{{ row.is_visible }}</span>
           </td>
           <td class="px-4 py-3 text-gray-700">
             <button

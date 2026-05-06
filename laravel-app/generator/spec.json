@@ -1,7 +1,9 @@
 {
-  "name": "Test",
+  "name": "Image",
   "fields": [
-    { "name": "test_code", "label": "Test Code", "type": "text" },
-    { "name": "test_name", "label": "Test Name", "type": "text" }
+    { "name": "image_code", "label": "Image Code", "type": "text" },
+    { "name": "image_name", "label": "Image Name", "type": "text" },
+    { "name": "is_active", "label": "Is Active", "type": "checkbox" },
+    { "name": "is_visible", "label": "Is Visible", "type": "checkbox" }
   ]
 }

@@ -7,9 +7,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
-class TestController extends Controller
+class FileController extends Controller
 {
-    private const TABLE = 'tests';
+    private const TABLE = 'files';
 
     public function index(): JsonResponse
     {
@@ -23,8 +23,10 @@ class TestController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'test_code' => 'nullable|string',
-            'test_name' => 'nullable|string',
+            'file_code' => 'nullable|string',
+            'file_name' => 'nullable|string',
+            'is_active' => 'boolean',
+            'is_visible' => 'boolean',
         ]);
 
         $id = DB::table(self::TABLE)->insertGetId(array_merge($data, [
@@ -38,8 +40,10 @@ class TestController extends Controller
     public function update(Request $request, int $id): JsonResponse
     {
         $data = $request->validate([
-            'test_code' => 'nullable|string',
-            'test_name' => 'nullable|string',
+            'file_code' => 'nullable|string',
+            'file_name' => 'nullable|string',
+            'is_active' => 'boolean',
+            'is_visible' => 'boolean',
         ]);
 
         DB::table(self::TABLE)

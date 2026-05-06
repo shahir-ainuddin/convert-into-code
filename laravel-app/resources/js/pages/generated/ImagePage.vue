@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
-import TestForm from '../../components/generated/TestForm.vue'
-import TestTable from '../../components/generated/TestTable.vue'
+import ImageForm from '../../components/generated/ImageForm.vue'
+import ImageTable from '../../components/generated/ImageTable.vue'
 
 const rows = ref<any[]>([])
 const editingId = ref<number | null>(null)
@@ -11,7 +11,7 @@ const isSaving = ref(false)
 const isDeletingModule = ref(false)
 
 async function loadRows() {
-  const response = await fetch('/generated-api/tests', {
+  const response = await fetch('/generated-api/images', {
     credentials: 'same-origin'
   })
   if (!response.ok) {
@@ -29,8 +29,8 @@ async function onSubmit(payload: Record<string, unknown>) {
   try {
     const isEditing = editingId.value !== null
     const targetUrl = isEditing
-      ? `/generated-api/tests/${editingId.value}`
-      : '/generated-api/tests'
+      ? `/generated-api/images/${editingId.value}`
+      : '/generated-api/images'
     const response = await fetch(targetUrl, {
       method: isEditing ? 'PUT' : 'POST',
       credentials: 'same-origin',
@@ -71,7 +71,7 @@ async function onDeleteModule() {
   const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') ?? ''
 
   try {
-    const response = await fetch('/generated-api/modules/Test', {
+    const response = await fetch('/generated-api/modules/Image', {
       method: 'DELETE',
       credentials: 'same-origin',
       headers: {
@@ -99,8 +99,8 @@ onMounted(loadRows)
 <template>
   <main class="space-y-6">
     <section>
-      <h2 class="mb-3 text-xl font-semibold text-slate-800">Test Form</h2>
-      <TestForm :model-value="formModel" :submit-label="editingId ? 'Update' : 'Save'" @submit="onSubmit" />
+      <h2 class="mb-3 text-xl font-semibold text-slate-800">Image Form</h2>
+      <ImageForm :model-value="formModel" :submit-label="editingId ? 'Update' : 'Save'" @submit="onSubmit" />
       <p v-if="isSaving" class="mt-2 text-sm text-slate-600">Saving...</p>
       <button
         type="button"
@@ -114,8 +114,8 @@ onMounted(loadRows)
     </section>
 
     <section>
-      <h2 class="mb-3 text-xl font-semibold text-slate-800">Test Table</h2>
-      <TestTable :rows="rows" @edit="onEdit" />
+      <h2 class="mb-3 text-xl font-semibold text-slate-800">Image Table</h2>
+      <ImageTable :rows="rows" @edit="onEdit" />
     </section>
   </main>
 </template>

@@ -8,16 +8,18 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('tests', function (Blueprint $table): void {
+        Schema::create('files', function (Blueprint $table): void {
             $table->id();
-            $table->string('test_code')->nullable();
-            $table->string('test_name')->nullable();
+            $table->string('file_code')->nullable();
+            $table->string('file_name')->nullable();
+            $table->boolean('is_active')->default(false);
+            $table->boolean('is_visible')->default(false);
             $table->timestamps();
         });
     }
 
     public function down(): void
     {
-        Schema::dropIfExists('tests');
+        Schema::dropIfExists('files');
     }
 };

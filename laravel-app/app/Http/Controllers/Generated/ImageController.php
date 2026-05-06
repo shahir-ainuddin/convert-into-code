@@ -1,0 +1,57 @@
+<?php
+
+namespace App\Http\Controllers\Generated;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+class ImageController extends Controller
+{
+    private const TABLE = 'images';
+
+    public function index(): JsonResponse
+    {
+        return response()->json(
+            DB::table(self::TABLE)
+                ->orderByDesc('id')
+                ->get()
+        );
+    }
+
+    public function store(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'image_code' => 'nullable|string',
+            'image_name' => 'nullable|string',
+            'is_active' => 'boolean',
+            'is_visible' => 'boolean',
+        ]);
+
+        $id = DB::table(self::TABLE)->insertGetId(array_merge($data, [
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]));
+
+        return response()->json(['id' => $id], 201);
+    }
+
+    public function update(Request $request, int $id): JsonResponse
+    {
+        $data = $request->validate([
+            'image_code' => 'nullable|string',
+            'image_name' => 'nullable|string',
+            'is_active' => 'boolean',
+            'is_visible' => 'boolean',
+        ]);
+
+        DB::table(self::TABLE)
+            ->where('id', $id)
+            ->update(array_merge($data, [
+                'updated_at' => now(),
+            ]));
+
+        return response()->json(['id' => $id]);
+    }
+}
